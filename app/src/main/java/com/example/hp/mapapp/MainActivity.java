@@ -3,10 +3,16 @@ package com.example.hp.mapapp;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
@@ -34,7 +40,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MainActivity extends FragmentActivity implements GoogleMap.OnMyLocationButtonClickListener,OnMapReadyCallback {
 
     private static final int MY_LOCATION_REQUEST_CODE = 99;
     private GoogleMap mMap;
@@ -85,6 +91,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @SuppressLint("MissingPermission")
     void updatemap() {
         mMap.setMyLocationEnabled(true);
+        mMap.setOnMyLocationButtonClickListener(this);
         // Add a marker in Sydney, Australia, and move the camera.
 
 
@@ -122,6 +129,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
 
+    }
+
+    @Override
+    public boolean onMyLocationButtonClick() {
+        isGPSEnable();
+        return false;
     }
 
     private class DownloadTask extends AsyncTask<String, Void, String> {
@@ -220,9 +233,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         String key = "key=AIzaSyCMQFmvLLCPawrJO0mb9NTjP2bxiS8sQ9Y";
         String alternatives = "alternatives=false";
         String waypoints = "waypoints=optimize%3Atrue";
-        for(int i =1;i<locs.size()-1;i++)
-        {
-            waypoints = waypoints+"%7C"+locs.get(i).latitude+"%2C"+locs.get(i).longitude;
+        for (int i = 1; i < locs.size() - 1; i++) {
+            waypoints = waypoints + "%7C" + locs.get(i).latitude + "%2C" + locs.get(i).longitude;
         }
         // Building the parameters to the web service
         String parameters = str_origin + "&" + str_dest + "&" + sensor + "&" + mode + "&" + alternatives + "&" + waypoints + "&" + key;
@@ -271,5 +283,39 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             urlConnection.disconnect();
         }
         return data;
+    }
+
+    public void isGPSEnable() {
+
+        LocationManager mlocManager;
+        mlocManager = (LocationManager) activity
+                .getSystemService(Context.LOCATION_SERVICE);
+
+        if (!mlocManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+                    activity);
+            alertDialogBuilder
+                    .setMessage("GPS is disabled in your device. Enable it?")
+                    .setCancelable(false)
+                    .setPositiveButton("Enable GPS",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,
+                                                    int id) {
+                                    Intent callGPSSettingIntent = new Intent(
+                                            android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                                    activity.startActivity(callGPSSettingIntent);
+                                }
+                            });
+            alertDialogBuilder.setNegativeButton("Cancel",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            dialog.cancel();
+                        }
+                    });
+            AlertDialog alert = alertDialogBuilder.create();
+            alert.show();
+
+        }
     }
 }
